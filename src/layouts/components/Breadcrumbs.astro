@@ -1,26 +1,64 @@
 ---
 import { humanize } from "@/lib/utils/textConverter";
 
-const { className }: { className?: string } = Astro.props;
+interface BreadcrumbItem {
+  label: string;
+  href: string;
+}
 
-const paths = Astro.url.pathname.split("/").filter((x: string) => x);
-let parts = [
-  {
-    label: "Home",
-    href: "/",
-    "aria-label": Astro.url.pathname === "/" ? "page" : undefined,
-  },
-];
+const { className, customBreadcrumbs }: { 
+  className?: string; 
+  customBreadcrumbs?: BreadcrumbItem[];
+} = Astro.props;
 
-paths.forEach((label: string, i: number) => {
-  const href = `/${paths.slice(0, i + 1).join("/")}`;
-  label !== "page" &&
-    parts.push({
-      label: humanize(label.replace(".html", "").replace(/[-_]/g, " ")) || "",
-      href,
-      "aria-label": Astro.url.pathname === href ? "page" : undefined,
-    });
-});
+// Get the current pathname and split it into segments
+const currentPath = Astro.url.pathname;
+
+let parts;
+
+if (customBreadcrumbs) {
+  // Use custom breadcrumbs if provided
+  parts = [
+    {
+      label: "Home",
+      href: "/",
+      "aria-label": currentPath === "/" ? "page" : undefined,
+    },
+    ...customBreadcrumbs.map((crumb, index) => ({
+      label: crumb.label,
+      href: crumb.href,
+      "aria-label": currentPath === crumb.href ? "page" : undefined,
+    }))
+  ];
+} else {
+  // Auto-generate breadcrumbs from URL
+  const paths = currentPath.split("/").filter((x: string) => x && x.length > 0);
+  
+  // Start with Home
+  parts = [
+    {
+      label: "Home",
+      href: "/",
+      "aria-label": currentPath === "/" ? "page" : undefined,
+    },
+  ];
+
+  // Build breadcrumb parts from URL segments
+  paths.forEach((segment: string, i: number) => {
+    const href = `/${paths.slice(0, i + 1).join("/")}/`;
+    
+    // Skip pagination and filter out unwanted segments
+    if (segment !== "page" && segment !== "index") {
+      const label = humanize(segment.replace(".html", "").replace(/[-_]/g, " "));
+      
+      parts.push({
+        label: label || segment,
+        href,
+        "aria-label": currentPath === href ? "page" : undefined,
+      });
+    }
+  });
+}
 ---
 
 <nav aria-label="Breadcrumb" class={className}>
@@ -28,13 +66,13 @@ paths.forEach((label: string, i: number) => {
     {
       parts.map(({ label, ...attrs }, index) => (
         <li class="mx-1 capitalize" role="listitem">
-          {index > 0 && <span class="inlin-block mr-1">/</span>}
+          {index > 0 && <span class="inline-block mr-1 text-dark">/</span>}
           {index !== parts.length - 1 ? (
-            <a class="text-primary " {...attrs}>
+            <a class="text-primary hover:text-primary/80 transition-colors" {...attrs}>
               {label}
             </a>
           ) : (
-            <span class="text-light ">{label}</span>
+            <span class="text-dark font-medium">{label}</span>
           )}
         </li>
       ))

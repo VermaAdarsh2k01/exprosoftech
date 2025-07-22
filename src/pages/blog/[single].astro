@@ -2,6 +2,7 @@
 import Base from "@/layouts/Base.astro";
 import BlogSingle from "@/layouts/BlogSingle.astro";
 import { sanityClient } from "sanity:client";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
 
 export const prerender = true;
 
@@ -46,5 +47,14 @@ const { title, excerpt, image } = post;
   meta_title={title}
   description={excerpt || ""}
   image={image}>
+  <section class="section-sm">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <Breadcrumbs className="mt-4" />
+        </div>
+      </div>
+    </div>
+  </section>
   <BlogSingle post={post} />
 </Base>

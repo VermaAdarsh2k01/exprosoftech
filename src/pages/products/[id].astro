@@ -31,99 +31,108 @@ interface Product {
   ctaSection: any;
 }
 
-const { id } = Astro.params;
+export const prerender = true;
 
-// Fetch product data directly
-const product = await sanityClient.fetch(`
-  *[_type == "dynamicProductPage" && slug.current == $id][0] {
-    "id": slug.current,
-    title,
-    metaTitle,
-    metaDescription,
-    image,
-    headerContent {
-      badge,
+export async function getStaticPaths() {
+  const products = await sanityClient.fetch(`
+    *[_type == "dynamicProductPage"] {
+      "slug": slug.current,
+      "id": slug.current,
       title,
-      subtitle,
-      description,
-      image {
-        "src": src.asset->url,
-        alt
+      metaTitle,
+      metaDescription,
+      image,
+      headerContent {
+        badge,
+        title,
+        subtitle,
+        description,
+        image {
+          "src": src.asset->url,
+          alt
+        },
+        buttons[] {
+          label,
+          link,
+          isOpenBooking
+        }
       },
-      buttons[] {
-        label,
-        link,
-        isOpenBooking
-      }
-    },
-    clients,
-    featuresGridSection,
-    mobileFeaturesSection {
-      title,
-      description,
-      features[] {
+      clients,
+      featuresGridSection,
+      mobileFeaturesSection {
         title,
         description,
-        icon
+        features[] {
+          title,
+          description,
+          icon
+        },
+        image {
+          "src": src.asset->url,
+          alt
+        },
+        metricValues[] {
+          value,
+          label
+        }
       },
-      image {
-        "src": src.asset->url,
-        alt
-      },
-      metricValues[] {
-        value,
-        label
-      }
-    },
-    featureShowcaseSection {
-      tagline,
-      title,
-      description,
-      features[] {
+      featureShowcaseSection {
+        tagline,
         title,
-        description
+        description,
+        features[] {
+          title,
+          description
+        },
+        image {
+          "src": src.asset->url,
+          alt
+        },
+        button {
+          text,
+          link
+        }
       },
-      image {
-        "src": src.asset->url,
-        alt
+      benfitsSection {
+        heading {
+          subtitle,
+          title,
+          description
+        },
+        benefits[] {
+          title,
+          description
+        }
       },
-      button {
-        text,
-        link
-      }
-    },
-    benfitsSection {
-      heading {
+      additionalFeaturesSection,
+      faqSection,
+      ctaSection {
+        isVisible,
+        tagline,
+        title,
         subtitle,
-        title,
-        description
-      },
-      benefits[] {
-        title,
-        description
-      }
-    },
-    additionalFeaturesSection,
-    faqSection,
-    ctaSection {
-      isVisible,
-      tagline,
-      title,
-      subtitle,
-      description,
-      metrices,
-      buttons[] {
-        label,
-        link,
-        isOpenBooking
-      },
-      image {
-        "src": src.asset->url,
-        alt
+        description,
+        metrices,
+        buttons[] {
+          label,
+          link,
+          isOpenBooking
+        },
+        image {
+          "src": src.asset->url,
+          alt
+        }
       }
     }
-  }
-`, { id });
+  `);
+  
+  return products.map((product: any) => ({
+    params: { id: product.slug },
+    props: { product },
+  }));
+}
+
+const { product } = Astro.props as { product: any };
 
 // Fetch product blogs for carousel
 const productBlogsQuery = `*[_type == "productBlog"] | order(date desc)[0...5] {
